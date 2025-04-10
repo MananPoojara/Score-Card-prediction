@@ -6,20 +6,26 @@ import time
 import streamlit.components.v1 as components
 
 # Function to load model dynamically
-@st.cache_resource  # Prevents reloading every time
+@st.cache_resource
 def load_model(model_name):
     if model_name == "Random Forest":
         return pickle.load(open('rf_pipe.pkl', 'rb'))
-    else:
+    elif model_name == "XGBoost":
         return pickle.load(open('xgb_pipe.pkl', 'rb'))
+    else:  # LightGBM
+        return pickle.load(open('lgbm_pipe.pkl', 'rb'))
 
+# Streamlit Page Setup
 st.set_page_config(page_title="🏏Cricket Score Predictor", layout="centered")
 st.title("🏏 Cricket Score Predictor")
-model_choice = st.radio("🔄 Select Model", ["Random Forest", "XGBoost"])
 
-# Load selected model (only one at a time)
+# Model Selection
+model_choice = st.radio("🔄 Select Model", ["Random Forest", "XGBoost", "LightGBM"])
+
+# Load selected model
 pipe = load_model(model_choice)
 
+# Dropdown options
 teams = sorted([
     'Australia', 'India', 'Bangladesh', 'New Zealand', 'South Africa',
     'England', 'West Indies', 'Afghanistan', 'Pakistan', 'Sri Lanka'
@@ -34,6 +40,8 @@ cities = sorted([
     'Chandigarh', 'Adelaide', 'Bangalore', 'St Kitts', 'Cardiff', 'Christchurch',
     'Trinidad'
 ])
+
+# User Inputs
 batting_team = st.selectbox("🏏 Select Batting Team", teams)
 bowling_team = st.selectbox("🎯 Select Bowling Team", teams)
 city = st.selectbox("📍 Match City", cities)
@@ -42,10 +50,10 @@ overs = st.number_input("⏳ Overs Completed (Min 5)", min_value=5, max_value=20
 wickets = st.number_input("❌ Wickets Fallen", min_value=0, max_value=10, step=1)
 last_five = st.number_input("⚡ Runs in Last 5 Overs", min_value=0, step=1)
 
-# Predict Button
+# Prediction
 if st.button("🔮 Predict Score"):
     with st.spinner("Predicting... ⏳"):
-        time.sleep(3) 
+        time.sleep(2)
 
     balls_left = 120 - (overs * 6)
     wickets_left = 10 - wickets
@@ -66,3 +74,13 @@ if st.button("🔮 Predict Score"):
     predicted_score = int(result[0])
 
     st.success(f"🏆 **Predicted Score: {predicted_score}** using **{model_choice}**")
+
+    components.html(
+        """
+        <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+        <script>
+            confetti({ particleCount: 50, spread: 70, origin: { y: 0.6 } });
+        </script>
+        """,
+        height=0
+    )
